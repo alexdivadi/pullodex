@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:infinite_carousel/infinite_carousel.dart';
 import 'package:pullodex/src/contacts/contact_card.dart';
+import 'package:pullodex/src/contacts/contact_form_view.dart';
 import 'package:pullodex/src/contacts/search_criteria.dart';
 
 import '../settings/settings_view.dart';
@@ -19,7 +21,7 @@ class ContactListView extends StatefulWidget {
 }
 
 class _ContactListViewState extends State<ContactListView> {
-  final double _itemExtent = 300;
+  final double _itemExtent = 250;
   final TextEditingController _searchController = TextEditingController();
   late InfiniteScrollController _controller;
 
@@ -43,6 +45,7 @@ class _ContactListViewState extends State<ContactListView> {
         withProperties: true,
         withThumbnail: true,
         withGroups: true,
+        withAccounts: true,
       );
       //contacts.sort(((a, b) => a.displayName.compareTo(b.displayName)));
       setState(() => _contacts = contacts);
@@ -62,6 +65,16 @@ class _ContactListViewState extends State<ContactListView> {
       if (index != -1) {
         _controller.animateToItem(index);
       }
+    }
+  }
+
+  void _sortContacts(SearchCriteria criteria) {
+    if (_contacts == null) return;
+    if (_contacts!.isNotEmpty) {
+      _contacts!.sort(((a, b) => switch (criteria) {
+            SearchCriteria.firstName => a.displayName.compareTo(b.displayName),
+            SearchCriteria.lastName => a.name.last.compareTo(b.name.last),
+          }));
     }
   }
 
@@ -111,11 +124,14 @@ class _ContactListViewState extends State<ContactListView> {
                         alignedDropdown: true,
                         child: DropdownButton(
                           value: _criteria,
-                          onChanged: (SearchCriteria? value) => value != null
-                              ? setState(() {
-                                  _criteria = value;
-                                })
-                              : null,
+                          onChanged: (SearchCriteria? value) {
+                            if (value != null) {
+                              _sortContacts(value);
+                              setState(() {
+                                _criteria = value;
+                              });
+                            }
+                          },
                           items: SearchCriteria.values
                               .map<DropdownMenuItem<SearchCriteria>>(
                                   (SearchCriteria criteria) {
@@ -152,35 +168,17 @@ class _ContactListViewState extends State<ContactListView> {
                               axisDirection: Axis.vertical,
                               itemBuilder: (context, index, listIndex) {
                                 final item = _contacts![index];
-                                final currentOffset = _itemExtent * listIndex;
 
-                                return AnimatedBuilder(
-                                  animation: _controller,
-                                  builder: (context, child) {
-                                    final diff =
-                                        (_controller.offset - currentOffset);
-                                    const maxPadding = 10.0;
-                                    final carouselRatio =
-                                        _itemExtent / maxPadding;
-
-                                    return Padding(
-                                      padding: EdgeInsets.only(
-                                        left: (diff / carouselRatio).abs(),
-                                        right: (diff / carouselRatio).abs(),
-                                      ),
-                                      child: child,
-                                    );
-                                  },
-                                  child: ContactCard(
-                                    item,
-                                    onEdit: () => showDialog(
-                                      context: context,
-                                      builder: (context) => const SimpleDialog(
-                                        title: Text("Hi"),
-                                      ),
+                                return ContactCard(item, onEdit: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ContactFormView(contact: item),
                                     ),
-                                  ),
-                                );
+                                  );
+                                  _fetchContacts();
+                                });
                               },
                             ),
                           ),
@@ -195,6 +193,13 @@ class _ContactListViewState extends State<ContactListView> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.pushNamed(context, ContactFormView.routeName);
+          _fetchContacts();
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

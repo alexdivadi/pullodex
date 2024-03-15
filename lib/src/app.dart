@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:pullodex/src/contacts/contact_form_view.dart';
 
 import 'contacts/contact_list_view.dart';
 import 'settings/settings_controller.dart';
@@ -32,8 +33,17 @@ class MyApp extends StatelessWidget {
           ],
           onGenerateTitle: (BuildContext context) =>
               AppLocalizations.of(context)!.appTitle,
-          theme: ThemeData(),
-          darkTheme: ThemeData.dark(),
+          theme: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(255, 211, 151, 13),
+            ),
+          ),
+          darkTheme: ThemeData.dark().copyWith(
+            colorScheme: ColorScheme.fromSeed(
+              brightness: Brightness.dark,
+              seedColor: const Color.fromARGB(255, 66, 5, 170),
+            ),
+          ),
           themeMode: settingsController.themeMode,
           onGenerateRoute: (RouteSettings routeSettings) {
             return MaterialPageRoute<void>(
@@ -42,6 +52,8 @@ class MyApp extends StatelessWidget {
                 switch (routeSettings.name) {
                   case SettingsView.routeName:
                     return SettingsView(controller: settingsController);
+                  case ContactFormView.routeName:
+                    return const ContactFormView();
                   case ContactListView.routeName:
                   default:
                     return const ContactListView();
