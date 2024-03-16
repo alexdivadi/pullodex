@@ -37,7 +37,7 @@ class _ContactListViewState extends State<ContactListView> {
   }
 
   Future _fetchContacts() async {
-    if (!await FlutterContacts.requestPermission(readonly: true)) {
+    if (!await FlutterContacts.requestPermission()) {
       setState(() => _permissionDenied = true);
     } else {
       final contacts = await FlutterContacts.getContacts(
